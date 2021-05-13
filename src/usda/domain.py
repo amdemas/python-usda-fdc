@@ -72,6 +72,7 @@ class AbridgedFoodNutrient(UsdaObject):
             out_str += attr.__str__() + "\n"
         return out_str
 
+
 class Nutrient(UsdaObject):
     """
     Class representing a FDC Nutrient
@@ -278,7 +279,7 @@ class FoodNutrient(UsdaObject):
         if nutrDetails:
             nutrDetails = NutrientAnalysisDetails.from_response_data(nutrDetails)
         return FoodNutrient(
-            fn_id=response_data['id'],
+            fn_id=response_data.get('id'),
             amount=response_data.get('amount'),
             data_points=response_data.get('dataPoints'),
             d_min=response_data.get('min'),
@@ -626,11 +627,14 @@ class SRLegacyFoodItem(FoodItem):
         if category:
             category = FoodCategory.from_response_data(category)
         food_nutrients = [FoodNutrient.from_response_data(nutrient) for nutrient in response_data.get('foodNutrients')]
+        food_portions = response_data.get('foodPortions')
+        if food_portions:
+            food_portions = [FoodPortion.from_response_data(portion) for portion in food_portions]
         conv_fcts = response_data.get('nutrientConversionFactors')
         if conv_fcts:
             conv_fcts = [NutrientConversionFactor.from_response_data(conv_fct) for conv_fct in conv_fcts]
         return SRLegacyFoodItem(
-            fdc_id=response_data['fdc_id'],
+            fdc_id=response_data['fdcId'],
             data_type=response_data['dataType'],
             desc=response_data['description'],
             food_class=response_data.get('foodClass'),
@@ -640,13 +644,16 @@ class SRLegacyFoodItem(FoodItem):
             sci_name=response_data.get('scientificName'),
             category=category,
             nutrients=food_nutrients,
+            portions=food_portions,
             conv_fcts=conv_fcts)
 
     def __init__(self, fdc_id, data_type, desc, food_class=None, his_ref=None, ndb_id=None,
-                 pub_date=None, sci_name=None, category=None, nutrients=None, conv_fcts=None):
+                 pub_date=None, sci_name=None, category=None, nutrients=None, conv_fcts=None,
+                 portions=None):
 
         super(SRLegacyFoodItem, self).__init__(fdc_id, data_type, desc)
         self.nutrients = nutrients
+        self.portions = portions
         self.food_class = food_class if food_class else "Food class is undefined"
         self.is_hist_ref = True if his_ref else False
         self.ndb_id = ndb_id
@@ -799,7 +806,6 @@ class SearchResult(UsdaObject):
         for i in range(1, len(self.foods)+1):
             out_str += "{}: {}\n".format(i, self.foods[i-1])
         return out_str
-
 
 class FoodUpdateLog(UsdaObject):
     """
@@ -1121,7 +1127,16 @@ class MeasureUnit(UsdaObject):
         self.id = m_id
         self.abbv = abbv
         self.name = name
-        
+
+    def __repr__(self):
+        return "{} ID: {} NAME: {}".format(self.__class__.__name__, self.id, self.name)
+
+    def __str__(self):
+        out_str = ""
+        for attr in self.__dict__:
+            out_str += attr + ": {}\n".format(self[attr])
+        return out_str
+
 class RetentionFactor(UsdaObject):
     """
     Class representing a FDC RetentionFactor
@@ -1248,4 +1263,33 @@ class LabeledNutrients(UsdaObject):
         
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
-        
+
+class NutrientConversionFactor(UsdaObject):
+    """
+    Class representing a FDC NutrientConversionFactor
+
+    Params:
+        id (int): ID, example: 534358
+        value (float): Conversion value by type, example: 6.25
+        name (str): Conversion type, example: .ProteinConversionFactor
+    """
+
+    @staticmethod
+    def from_response_data(response_data):
+        return NutrientConversionFactor(
+            fdc_id=response_data["id"],
+            value=response_data["value"],
+            name=response_data["name"])
+
+    def __init__(self, fdc_id, value, name):
+
+        super(NutrientConversionFactor, self).__init__()
+        self.fdc_id = fdc_id
+        self.value = value
+        self.name = name.strip()
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "{0} ID: {1}, '{2}'".format(self.__class__.__name__, self.id, self.name)
