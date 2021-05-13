@@ -12,6 +12,7 @@ DATA_TYPE_FOOD_ITEM = {
     "SR Legacy": SRLegacyFoodItem,
     "Survey": SurveyFoodItem,
     "Sample": SampleFoodItem,
+    "Survey (FNDDS)": SurveyFoodItem,
 }
 
 class UsdaClient(ClientBase):
