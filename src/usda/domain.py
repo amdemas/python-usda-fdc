@@ -193,7 +193,7 @@ class NutrientAnalysisDetails(UsdaObject):
     def from_response_data(response_data):
         acq_deets = response_data.get('nutrientAcquisitionDetails')
         if acq_deets:
-            acq_deets = NutrientAcquisitionDetails.from_response_data(acq_deets)
+            acq_deets = [NutrientAcquisitionDetails.from_response_data(acq_deet) for acq_deet in acq_deets]
         return NutrientAnalysisDetails(
             s_id=response_data['subSampleId'],
             amount=response_data['amount'],
@@ -277,7 +277,7 @@ class FoodNutrient(UsdaObject):
             nutrDerv = FoodNutrientDerivation.from_response_data(nutrDerv)
         nutrDetails = response_data.get('nutrientAnalysisDetails')
         if nutrDetails:
-            nutrDetails = NutrientAnalysisDetails.from_response_data(nutrDetails)
+            nutrDetails = [NutrientAnalysisDetails.from_response_data(nutrDetail) for nutrDetail in nutrDetails]
         return FoodNutrient(
             fn_id=response_data.get('id'),
             amount=response_data.get('amount'),
@@ -569,7 +569,7 @@ class FoundationFoodItem(FoodItem):
         if conv_fcts:
             conv_fcts = [NutrientConversionFactor.from_response_data(conv_fct) for conv_fct in conv_fcts]
         return FoundationFoodItem(
-            fdc_id=response_data['fdc_id'],
+            fdc_id=response_data['fdcId'],
             data_type=response_data['dataType'],
             desc=response_data['description'],
             food_class=response_data.get('foodClass'),
@@ -742,7 +742,7 @@ class SampleFoodItem(FoodItem):
         food_attrs = response_data.get('foodAttributes')
         if food_attrs:
             food_attrs = [FoodCategory.from_response_data(food_cat) for food_cat in food_attrs]
-        return SampleFooditem(
+        return SampleFoodItem(
             fdc_id=response_data['fdcId'],
             data_type=response_data.get('dataType', 'Sample'),
             desc=response_data['description'],
@@ -752,7 +752,7 @@ class SampleFoodItem(FoodItem):
 
     def __init__(self, fdc_id, data_type, desc, food_class=None, pub_date=None, food_attrs=None):
 
-        super(SampleFooditem, self).__init__(fdc_id, data_type, desc)
+        super(SampleFoodItem, self).__init__(fdc_id, data_type, desc)
 
         self.food_class = food_class
         self.pub_date = pub_date
@@ -1278,14 +1278,22 @@ class NutrientConversionFactor(UsdaObject):
     def from_response_data(response_data):
         return NutrientConversionFactor(
             fdc_id=response_data["id"],
-            value=response_data["value"],
+            value=response_data.get("value"),
+            conv_type=response_data.get("type"),
+            protein_value=response_data.get("proteinValue"),
+            carb_value=response_data.get("carbohydrateValue"),
+            fat_value=response_data.get("fatValue"),
             name=response_data["name"])
 
-    def __init__(self, fdc_id, value, name):
+    def __init__(self, fdc_id, value, name, carb_value, protein_value, fat_value, conv_type):
 
         super(NutrientConversionFactor, self).__init__()
         self.fdc_id = fdc_id
         self.value = value
+        self.carb_value = carb_value
+        self.protein_value = protein_value
+        self.fat_value = fat_value
+        self.conv_type = conv_type
         self.name = name.strip()
 
     def __str__(self):
